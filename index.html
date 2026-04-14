@@ -380,7 +380,89 @@
             h1, h2, h3, h4 { -webkit-text-fill-color: #000; background: none; color: #000; }
         }
 
+        /* Image Selection Grid */
+        #image-selection {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .selection-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .selection-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .selection-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .selection-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .selection-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 40px rgba(56, 189, 248, 0.15);
+        }
+
+        .selection-card-image {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            object-fit: cover;
+            display: block;
+        }
+
+        .selection-card-body {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .selection-card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .selection-card .btn-primary {
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.6rem 1rem;
+        }
+
         /* Responsive */
+        @media (max-width: 900px) {
+            .selection-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 640px) {
             .container {
                 padding: 1.5rem;
@@ -411,6 +493,14 @@
 
             <div class="error-message" id="error-message">
                 Fehler beim Laden der Inhalte. Bitte versuchen Sie es später erneut.
+            </div>
+
+            <div id="image-selection">
+                <h2 class="selection-title">Wählen Sie ein Bild der Woche</h2>
+                <p class="selection-subtitle">Klicken Sie auf eines der drei aktuellen Bilder, um die Aufgaben dazu zu bearbeiten.</p>
+                <div class="selection-grid" id="selection-grid">
+                    <!-- Cards werden per JS eingefügt -->
+                </div>
             </div>
 
             <div id="article-content">
@@ -561,7 +651,9 @@
     </div>
 
     <script>
-        // Use a CORS proxy to fetch the content from another domain
+        // Globale Variable für alle geladenen Artikel
+        let allArticles = [];
+
         async function fetchBildDerWoche() {
             try {
                 // Lade lokale JSON-Datei (die von fetch_news.py erstellt wird)
@@ -573,7 +665,16 @@
                 }
                 
                 const data = await response.json();
-                renderContent(data.title, data.imageUrl, data.articleUrl, data.articleText);
+
+                // Unterstütze sowohl Array (neu) als auch einzelnes Objekt (alt)
+                if (Array.isArray(data) && data.length > 1) {
+                    allArticles = data;
+                    renderSelection(data);
+                } else {
+                    // Fallback: einzelnes Objekt oder Array mit 1 Element
+                    const article = Array.isArray(data) ? data[0] : data;
+                    renderContent(article.title, article.imageUrl, article.articleUrl, article.articleText);
+                }
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -581,6 +682,35 @@
                 document.getElementById('error-message').style.display = 'block';
                 document.getElementById('error-message').innerHTML = "Fehler: " + error.message + "<br><br>Hinweis: Führe <b>Start_Server.bat</b> aus, um die Daten vorab zu laden.";
             }
+        }
+
+        function renderSelection(articles) {
+            document.getElementById('loader').style.display = 'none';
+            const selectionDiv = document.getElementById('image-selection');
+            const grid = document.getElementById('selection-grid');
+            grid.innerHTML = '';
+
+            articles.forEach((article, index) => {
+                const card = document.createElement('div');
+                card.className = 'selection-card';
+                card.onclick = () => selectArticle(index);
+                card.innerHTML = `
+                    <img class="selection-card-image" src="${article.imageUrl}" alt="${article.title}">
+                    <div class="selection-card-body">
+                        <div class="selection-card-title">${article.title}</div>
+                        <button class="btn-primary" type="button">Dieses Bild wählen</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            selectionDiv.style.display = 'flex';
+        }
+
+        function selectArticle(index) {
+            const article = allArticles[index];
+            document.getElementById('image-selection').style.display = 'none';
+            renderContent(article.title, article.imageUrl, article.articleUrl, article.articleText);
         }
 
         function renderContent(title, imageUrl, articleUrl, articleText) {
