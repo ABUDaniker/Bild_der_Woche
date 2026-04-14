@@ -456,6 +456,27 @@
             padding: 0.6rem 1rem;
         }
 
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-color: var(--accent);
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .selection-grid {
@@ -504,6 +525,7 @@
             </div>
 
             <div id="article-content">
+                <button class="btn-back" id="btn-back-to-selection" onclick="goBackToSelection()" style="display: none;">← Zurück zur Auswahl</button>
                 <h2 class="article-title" id="article-title">Titel lädt...</h2>
                 <div class="article-image-container">
                     <img id="article-image" class="article-image" src="" alt="Bild der Woche">
@@ -711,6 +733,16 @@
             const article = allArticles[index];
             document.getElementById('image-selection').style.display = 'none';
             renderContent(article.title, article.imageUrl, article.articleUrl, article.articleText);
+            // Zeige den Zurück-Button nur wenn mehrere Artikel verfügbar sind
+            if (allArticles.length > 1) {
+                document.getElementById('btn-back-to-selection').style.display = 'inline-flex';
+            }
+        }
+
+        function goBackToSelection() {
+            document.getElementById('article-content').style.display = 'none';
+            document.getElementById('btn-back-to-selection').style.display = 'none';
+            document.getElementById('image-selection').style.display = 'flex';
         }
 
         function renderContent(title, imageUrl, articleUrl, articleText) {
@@ -764,6 +796,10 @@
                 btn.style.opacity = '0.5';
                 btn.style.cursor = 'not-allowed';
                 btn.textContent = "🔒 Artikel freischalten (Gesperrt)";
+            }
+            // Zurück-Button verstecken sobald der Schüler anfängt zu arbeiten
+            if (answer.trim().length > 0 || guess.trim().length > 0) {
+                document.getElementById('btn-back-to-selection').style.display = 'none';
             }
         }
 
